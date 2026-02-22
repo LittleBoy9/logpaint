@@ -1,0 +1,5 @@
+src
+test.mjs
+tsconfig.json
+*.log
+.qodo

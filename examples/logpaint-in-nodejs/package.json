@@ -1,0 +1,14 @@
+{
+  "name": "logpaint-in-nodejs",
+  "version": "1.0.0",
+  "description": "Example: Using logpaint with Node.js + Express",
+  "private": true,
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "logpaint": "file:../../",
+    "express": "^4.21.0"
+  }
+}
