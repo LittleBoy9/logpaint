@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>logpaint — Configure once, log everywhere</title>
+  <meta name="description" content="A lightweight, zero-dependency colored logger for Node.js with full TypeScript support.">
+  <meta property="og:title" content="logpaint">
+  <meta property="og:description" content="Configure once, log everywhere — colored console logs for Node.js">
+  <meta property="og:type" content="website">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    /* ─── Reset & Base ─────────────────────────────────────────── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #07060b;
+      --bg-secondary: #0f0e15;
+      --text: #e8e6f0;
+      --text-muted: #8a85a0;
+      --card-bg: rgba(255,255,255,0.04);
+      --card-border: rgba(255,255,255,0.08);
+      --card-hover-border: rgba(255,255,255,0.18);
+      --nav-bg: rgba(7,6,11,0.85);
+      --terminal-bg: #0c0b14;
+      --terminal-bar: #161520;
+      --code-bg: #0e0d17;
+      --tab-bg: rgba(255,255,255,0.05);
+      --tab-active-bg: rgba(255,255,255,0.12);
+      --table-row: rgba(255,255,255,0.03);
+      --table-border: rgba(255,255,255,0.06);
+      --copy-bg: rgba(255,255,255,0.08);
+      --scrollbar-thumb: rgba(255,255,255,0.12);
+      --shadow-color: rgba(0,0,0,0.4);
+
+      --magenta: #d160e0;
+      --cyan: #56d8e0;
+      --green: #4ade80;
+      --yellow: #facc15;
+      --red: #f87171;
+      --blue: #60a5fa;
+      --purple: #a78bfa;
+
+      --gradient-1: linear-gradient(135deg, var(--magenta), var(--cyan), var(--green));
+      --gradient-2: linear-gradient(135deg, var(--purple), var(--magenta), var(--red));
+    }
+
+    [data-theme="light"] {
+      --bg: #f5f3ff;
+      --bg-secondary: #ede9fe;
+      --text: #1e1b30;
+      --text-muted: #6b6490;
+      --card-bg: rgba(255,255,255,0.7);
+      --card-border: rgba(0,0,0,0.08);
+      --card-hover-border: rgba(0,0,0,0.18);
+      --nav-bg: rgba(245,243,255,0.85);
+      --terminal-bg: #1a1930;
+      --terminal-bar: #232240;
+      --code-bg: #1e1d30;
+      --tab-bg: rgba(0,0,0,0.05);
+      --tab-active-bg: rgba(0,0,0,0.1);
+      --table-row: rgba(0,0,0,0.03);
+      --table-border: rgba(0,0,0,0.08);
+      --copy-bg: rgba(0,0,0,0.06);
+      --scrollbar-thumb: rgba(0,0,0,0.12);
+      --shadow-color: rgba(0,0,0,0.1);
+    }
+
+    html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+      transition: background 0.5s ease, color 0.5s ease;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    /* ─── Scrollbar ────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+
+    /* ─── Nav ──────────────────────────────────────────────────── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: var(--nav-bg);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--card-border);
+      transition: background 0.5s ease, border-color 0.5s ease;
+    }
+    .nav-inner {
+      max-width: 1200px; margin: 0 auto;
+      padding: 0 24px; height: 64px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-logo {
+      font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 1.3rem;
+      background: var(--gradient-1); -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent; background-size: 200% 200%;
+      animation: gradientShift 4s ease infinite;
+    }
+    .nav-links { display: flex; align-items: center; gap: 28px; }
+    .nav-links a {
+      font-size: 0.88rem; font-weight: 500; color: var(--text-muted);
+      transition: color 0.3s; position: relative;
+    }
+    .nav-links a:hover { color: var(--text); }
+    .nav-links a::after {
+      content: ''; position: absolute; bottom: -4px; left: 0; width: 0; height: 2px;
+      background: var(--gradient-1); border-radius: 1px; transition: width 0.3s;
+    }
+    .nav-links a:hover::after { width: 100%; }
+
+    .theme-toggle {
+      width: 40px; height: 40px; border-radius: 12px;
+      background: var(--tab-bg); border: 1px solid var(--card-border);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all 0.3s; font-size: 1.15rem; color: var(--text);
+    }
+    .theme-toggle:hover { background: var(--tab-active-bg); transform: rotate(20deg); }
+
+    .github-link {
+      display: flex; align-items: center; gap: 6px; font-size: 0.88rem;
+      color: var(--text-muted); transition: color 0.3s;
+    }
+    .github-link:hover { color: var(--text); }
+    .github-link svg { width: 20px; height: 20px; fill: currentColor; }
+
+    .hamburger {
+      display: none; background: none; border: none; cursor: pointer;
+      width: 36px; height: 36px; flex-direction: column;
+      align-items: center; justify-content: center; gap: 5px;
+    }
+    .hamburger span {
+      display: block; width: 22px; height: 2px; background: var(--text);
+      border-radius: 2px; transition: all 0.3s;
+    }
+
+    /* ─── Hero ─────────────────────────────────────────────────── */
+    .hero {
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; text-align: center;
+      padding: 100px 24px 60px; position: relative; overflow: hidden;
+    }
+
+    /* Paint blobs */
+    .blob {
+      position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.3;
+      animation: blobFloat 20s ease-in-out infinite;
+    }
+    .blob-1 {
+      width: 500px; height: 500px; background: var(--magenta);
+      top: -10%; left: -10%; animation-delay: 0s;
+    }
+    .blob-2 {
+      width: 400px; height: 400px; background: var(--cyan);
+      top: 20%; right: -8%; animation-delay: -7s;
+    }
+    .blob-3 {
+      width: 350px; height: 350px; background: var(--purple);
+      bottom: -5%; left: 20%; animation-delay: -14s;
+    }
+    .blob-4 {
+      width: 300px; height: 300px; background: var(--green);
+      bottom: 20%; right: 15%; animation-delay: -3s; opacity: 0.15;
+    }
+
+    [data-theme="light"] .blob { opacity: 0.15; }
+
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 18px; border-radius: 100px;
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      font-size: 0.82rem; font-weight: 500; color: var(--text-muted);
+      margin-bottom: 32px; animation: fadeInUp 0.8s ease both;
+      backdrop-filter: blur(10px);
+    }
+    .hero-badge span { color: var(--green); }
+
+    .hero-title {
+      font-size: clamp(3.5rem, 10vw, 7.5rem); font-weight: 900;
+      line-height: 1; letter-spacing: -0.03em; margin-bottom: 20px;
+      position: relative; z-index: 1;
+      animation: fadeInUp 0.8s ease 0.1s both;
+    }
+    .hero-title .gradient-text {
+      background: var(--gradient-1); -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent; background-size: 300% 300%;
+      animation: gradientShift 5s ease infinite;
+    }
+
+    .hero-tagline {
+      font-size: clamp(1.1rem, 2.5vw, 1.45rem); color: var(--text-muted);
+      max-width: 550px; margin-bottom: 40px; font-weight: 400;
+      animation: fadeInUp 0.8s ease 0.2s both; position: relative; z-index: 1;
+    }
+
+    .install-box {
+      display: inline-flex; align-items: center; gap: 12px;
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      border-radius: 14px; padding: 14px 20px;
+      font-family: 'JetBrains Mono', monospace; font-size: 0.95rem;
+      cursor: pointer; transition: all 0.3s; position: relative; z-index: 1;
+      animation: fadeInUp 0.8s ease 0.3s both;
+      backdrop-filter: blur(10px);
+    }
+    .install-box:hover {
+      border-color: var(--card-hover-border);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px var(--shadow-color);
+    }
+    .install-box .dollar { color: var(--text-muted); user-select: none; }
+    .install-box .cmd { color: var(--text); }
+    .install-box .pkg { color: var(--cyan); }
+    .install-box .copy-icon {
+      color: var(--text-muted); transition: color 0.3s; font-size: 1.1rem;
+      display: flex; align-items: center;
+    }
+    .install-box:hover .copy-icon { color: var(--text); }
+    .install-box.copied { border-color: var(--green); }
+    .install-box.copied .copy-icon { color: var(--green); }
+
+    .confetti-container {
+      position: absolute; pointer-events: none; z-index: 200;
+    }
+    .confetti {
+      position: absolute; width: 6px; height: 6px; border-radius: 50%;
+      animation: confettiBurst 0.8s ease forwards;
+    }
+
+    /* ─── Section Common ───────────────────────────────────────── */
+    .section {
+      max-width: 1200px; margin: 0 auto;
+      padding: 100px 24px;
+    }
+    .section-label {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;
+      font-weight: 600; text-transform: uppercase; letter-spacing: 0.15em;
+      color: var(--cyan); margin-bottom: 12px;
+    }
+    .section-title {
+      font-size: clamp(2rem, 4vw, 2.8rem); font-weight: 800;
+      letter-spacing: -0.02em; margin-bottom: 16px;
+    }
+    .section-desc {
+      font-size: 1.05rem; color: var(--text-muted); max-width: 600px;
+      margin-bottom: 48px;
+    }
+
+    /* ─── Scroll Reveal ────────────────────────────────────────── */
+    .reveal {
+      opacity: 0; transform: translateY(30px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+    .reveal-delay-5 { transition-delay: 0.5s; }
+
+    /* ─── Terminal ─────────────────────────────────────────────── */
+    .terminal-section {
+      max-width: 1200px; margin: 0 auto;
+      padding: 0 24px 100px;
+    }
+    .terminal-wrapper {
+      max-width: 750px; margin: 0 auto;
+      border-radius: 16px; overflow: hidden;
+      box-shadow: 0 25px 80px rgba(0,0,0,0.4), 0 0 0 1px var(--card-border);
+      transition: transform 0.4s, box-shadow 0.4s;
+    }
+    .terminal-wrapper:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 35px 100px rgba(0,0,0,0.5), 0 0 0 1px var(--card-hover-border);
+    }
+    .terminal-bar {
+      background: var(--terminal-bar); padding: 12px 16px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .terminal-dot {
+      width: 12px; height: 12px; border-radius: 50%;
+    }
+    .terminal-dot.red { background: #ff5f57; }
+    .terminal-dot.yellow { background: #febc2e; }
+    .terminal-dot.green { background: #28c840; }
+    .terminal-bar-title {
+      flex: 1; text-align: center; font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem; color: var(--text-muted); margin-right: 44px;
+    }
+    .terminal-body {
+      background: var(--terminal-bg); padding: 20px 24px;
+      font-family: 'JetBrains Mono', monospace; font-size: 0.82rem;
+      line-height: 1.8; min-height: 320px;
+      color: #c9c7d6;
+    }
+    .terminal-line { white-space: pre; }
+    .terminal-cursor {
+      display: inline-block; width: 8px; height: 16px;
+      background: var(--text); vertical-align: text-bottom;
+      animation: blink 1s step-end infinite;
+    }
+
+    .t-dim { color: #6b6890; }
+    .t-magenta { color: var(--magenta); }
+    .t-cyan { color: var(--cyan); }
+    .t-green { color: var(--green); }
+    .t-yellow { color: var(--yellow); }
+    .t-red { color: var(--red); }
+    .t-blue { color: var(--blue); }
+    .t-purple { color: var(--purple); }
+    .t-muted { color: #555370; }
+
+    /* ─── Features ─────────────────────────────────────────────── */
+    .features-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+    }
+    .feature-card {
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      border-radius: 16px; padding: 32px 28px;
+      backdrop-filter: blur(10px);
+      transition: all 0.4s ease; position: relative; overflow: hidden;
+    }
+    .feature-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      border-radius: 16px 16px 0 0; opacity: 0; transition: opacity 0.4s;
+    }
+    .feature-card:hover {
+      transform: translateY(-6px);
+      border-color: var(--card-hover-border);
+      box-shadow: 0 20px 60px var(--shadow-color);
+    }
+    .feature-card:hover::before { opacity: 1; }
+    .feature-card:nth-child(1)::before { background: var(--green); }
+    .feature-card:nth-child(2)::before { background: var(--blue); }
+    .feature-card:nth-child(3)::before { background: var(--magenta); }
+    .feature-card:nth-child(4)::before { background: var(--cyan); }
+    .feature-card:nth-child(5)::before { background: var(--yellow); }
+    .feature-card:nth-child(6)::before { background: var(--purple); }
+
+    .feature-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem; margin-bottom: 18px;
+      background: var(--tab-bg);
+    }
+    .feature-card:nth-child(1) .feature-icon { color: var(--green); }
+    .feature-card:nth-child(2) .feature-icon { color: var(--blue); }
+    .feature-card:nth-child(3) .feature-icon { color: var(--magenta); }
+    .feature-card:nth-child(4) .feature-icon { color: var(--cyan); }
+    .feature-card:nth-child(5) .feature-icon { color: var(--yellow); }
+    .feature-card:nth-child(6) .feature-icon { color: var(--purple); }
+
+    .feature-card h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
+    .feature-card p { font-size: 0.88rem; color: var(--text-muted); line-height: 1.6; }
+
+    /* ─── Code Examples ────────────────────────────────────────── */
+    .code-section { background: var(--bg-secondary); transition: background 0.5s ease; }
+    .code-section .section { padding-top: 100px; padding-bottom: 100px; }
+
+    .tabs {
+      display: flex; gap: 4px; margin-bottom: 20px;
+      background: var(--tab-bg); border-radius: 12px; padding: 4px;
+      overflow-x: auto; -webkit-overflow-scrolling: touch;
+    }
+    .tab-btn {
+      padding: 10px 20px; border-radius: 10px;
+      background: transparent; border: none; cursor: pointer;
+      font-family: 'Inter', sans-serif; font-size: 0.82rem; font-weight: 600;
+      color: var(--text-muted); white-space: nowrap; transition: all 0.3s;
+    }
+    .tab-btn.active { background: var(--tab-active-bg); color: var(--text); }
+    .tab-btn:hover:not(.active) { color: var(--text); }
+
+    .code-panel { display: none; }
+    .code-panel.active { display: block; }
+
+    .code-block {
+      position: relative; background: var(--code-bg);
+      border-radius: 14px; border: 1px solid var(--card-border);
+      overflow: hidden;
+    }
+    .code-block-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px; border-bottom: 1px solid var(--card-border);
+    }
+    .code-block-lang {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.72rem;
+      color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em;
+    }
+    .code-copy-btn {
+      background: var(--copy-bg); border: none; cursor: pointer;
+      padding: 6px 12px; border-radius: 8px;
+      font-family: 'Inter', sans-serif; font-size: 0.75rem; font-weight: 500;
+      color: var(--text-muted); transition: all 0.3s; display: flex;
+      align-items: center; gap: 5px;
+    }
+    .code-copy-btn:hover { color: var(--text); background: var(--tab-active-bg); }
+    .code-copy-btn.copied { color: var(--green); }
+
+    .code-content {
+      padding: 20px 24px; overflow-x: auto;
+      font-family: 'JetBrains Mono', monospace; font-size: 0.82rem;
+      line-height: 1.7; color: #c9c7d6;
+    }
+    .code-content pre { margin: 0; }
+    /* Syntax colors */
+    .c-keyword { color: var(--magenta); }
+    .c-string { color: var(--green); }
+    .c-comment { color: #555370; font-style: italic; }
+    .c-func { color: var(--blue); }
+    .c-type { color: var(--cyan); }
+    .c-prop { color: var(--yellow); }
+    .c-num { color: #f9a8d4; }
+    .c-bracket { color: #888; }
+    .c-method { color: var(--purple); }
+
+    /* ─── API Reference ────────────────────────────────────────── */
+    .api-table-wrapper {
+      overflow-x: auto; border-radius: 14px;
+      border: 1px solid var(--table-border); margin-bottom: 32px;
+    }
+    .api-table {
+      width: 100%; border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    .api-table th {
+      text-align: left; padding: 14px 20px;
+      font-weight: 600; font-size: 0.8rem; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--text-muted);
+      background: var(--table-row); border-bottom: 1px solid var(--table-border);
+    }
+    .api-table td {
+      padding: 12px 20px; border-bottom: 1px solid var(--table-border);
+    }
+    .api-table tr:last-child td { border-bottom: none; }
+    .api-table tr:nth-child(even) td { background: var(--table-row); }
+    .api-table code {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.82rem;
+      background: var(--tab-bg); padding: 2px 8px; border-radius: 6px;
+      color: var(--cyan);
+    }
+
+    .api-subtitle {
+      font-size: 1.2rem; font-weight: 700; margin-bottom: 16px; margin-top: 40px;
+    }
+    .api-subtitle:first-of-type { margin-top: 0; }
+
+    /* ─── Footer ───────────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--card-border);
+      padding: 40px 24px; text-align: center;
+      transition: border-color 0.5s ease;
+    }
+    .footer-inner { max-width: 1200px; margin: 0 auto; }
+    .footer-links {
+      display: flex; align-items: center; justify-content: center;
+      gap: 24px; margin-bottom: 16px;
+    }
+    .footer-links a {
+      font-size: 0.88rem; color: var(--text-muted); transition: color 0.3s;
+    }
+    .footer-links a:hover { color: var(--text); }
+    .footer-copy { font-size: 0.82rem; color: var(--text-muted); }
+
+    /* ─── Keyframes ────────────────────────────────────────────── */
+    @keyframes gradientShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    @keyframes blobFloat {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      25% { transform: translate(30px, -40px) scale(1.1); }
+      50% { transform: translate(-20px, 20px) scale(0.95); }
+      75% { transform: translate(40px, 30px) scale(1.05); }
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+    @keyframes confettiBurst {
+      0% { transform: translate(0, 0) scale(1); opacity: 1; }
+      100% { transform: translate(var(--x), var(--y)) scale(0); opacity: 0; }
+    }
+
+    /* ─── Responsive ───────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .features-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 700px) {
+      .nav-links { display: none; }
+      .nav-links.open {
+        display: flex; flex-direction: column;
+        position: absolute; top: 64px; left: 0; right: 0;
+        background: var(--nav-bg); backdrop-filter: blur(20px);
+        padding: 20px 24px; gap: 16px;
+        border-bottom: 1px solid var(--card-border);
+      }
+      .hamburger { display: flex; }
+      .features-grid { grid-template-columns: 1fr; }
+      .hero-title { font-size: clamp(2.5rem, 12vw, 4rem); }
+      .terminal-body { font-size: 0.72rem; padding: 16px; min-height: 260px; }
+      .tabs { gap: 2px; }
+      .tab-btn { padding: 8px 14px; font-size: 0.75rem; }
+      .code-content { padding: 16px; font-size: 0.75rem; }
+      .api-table { font-size: 0.8rem; }
+      .api-table th, .api-table td { padding: 10px 14px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ─── Nav ────────────────────────────────────────────────── -->
+  <nav>
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">logpaint</a>
+      <div class="nav-links" id="navLinks">
+        <a href="#features">Features</a>
+        <a href="#demo">Demo</a>
+        <a href="#examples">Examples</a>
+        <a href="#api">API</a>
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+          <span id="themeIcon">&#9790;</span>
+        </button>
+        <a href="https://github.com/LittleBoy9/logpaint" target="_blank" class="github-link">
+          <svg viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          GitHub
+        </a>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ─── Hero ───────────────────────────────────────────────── -->
+  <section class="hero">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+    <div class="blob blob-4"></div>
+
+    <div class="hero-badge">
+      <span>&#9679;</span> Open source — Zero dependencies, full colors
+    </div>
+
+    <h1 class="hero-title">
+      <span class="gradient-text">logpaint</span>
+    </h1>
+
+    <p class="hero-tagline">
+      Configure once, log everywhere — a lightweight colored logger for Node.js with full TypeScript support.
+    </p>
+
+    <div class="install-box" id="installBox" title="Click to copy">
+      <span class="dollar">$</span>
+      <span><span class="cmd">npm i</span> <span class="pkg">logpaint</span></span>
+      <span class="copy-icon" id="copyIcon">&#128203;</span>
+    </div>
+  </section>
+
+  <!-- ─── Terminal Demo ──────────────────────────────────────── -->
+  <section class="terminal-section reveal" id="demo">
+    <div class="terminal-wrapper">
+      <div class="terminal-bar">
+        <div class="terminal-dot red"></div>
+        <div class="terminal-dot yellow"></div>
+        <div class="terminal-dot green"></div>
+        <div class="terminal-bar-title">node app.js</div>
+      </div>
+      <div class="terminal-body" id="terminalBody">
+        <span class="terminal-cursor" id="terminalCursor"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Features ───────────────────────────────────────────── -->
+  <section class="section" id="features">
+    <div class="reveal">
+      <div class="section-label">Features</div>
+      <h2 class="section-title">Everything you need. Nothing you don't.</h2>
+      <p class="section-desc">Built for developers who want beautiful logs without the bloat.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card reveal reveal-delay-1">
+        <div class="feature-icon">&#9898;</div>
+        <h3>Zero Dependencies</h3>
+        <p>Pure JavaScript using native Node.js APIs. No bloat, no supply chain risk. Just install and go.</p>
+      </div>
+      <div class="feature-card reveal reveal-delay-2">
+        <div class="feature-icon">&#9082;</div>
+        <h3>TypeScript First</h3>
+        <p>Full IntelliSense for custom levels. Generics ensure your custom log methods are fully typed.</p>
+      </div>
+      <div class="feature-card reveal reveal-delay-3">
+        <div class="feature-icon">&#127912;</div>
+        <h3>Custom Levels</h3>
+        <p>Add your own levels like <code>http</code> or <code>db</code> with custom colors, prefixes, and priorities.</p>
+      </div>
+      <div class="feature-card reveal reveal-delay-1">
+        <div class="feature-icon">&#128344;</div>
+        <h3>Timestamps</h3>
+        <p>Enable with a single flag. Each log line gets a clean <code>YYYY-MM-DD HH:MM:SS</code> prefix.</p>
+      </div>
+      <div class="feature-card reveal reveal-delay-2">
+        <div class="feature-icon">&#128678;</div>
+        <h3>Level Filtering</h3>
+        <p>Set <code>minLevel</code> to suppress low-priority logs. Show only warnings and errors in production.</p>
+      </div>
+      <div class="feature-card reveal reveal-delay-3">
+        <div class="feature-icon">&#9889;</div>
+        <h3>Runtime Switching</h3>
+        <p>Change log level on the fly with <code>setLevel()</code>. No restart needed. Perfect for debugging.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Code Examples ──────────────────────────────────────── -->
+  <div class="code-section" id="examples">
+    <div class="section">
+      <div class="reveal">
+        <div class="section-label">Examples</div>
+        <h2 class="section-title">Simple API. Powerful output.</h2>
+        <p class="section-desc">From zero-config to fully customized — in just a few lines.</p>
+      </div>
+
+      <div class="reveal reveal-delay-1">
+        <div class="tabs" role="tablist">
+          <button class="tab-btn active" data-tab="quick">Quick Start</button>
+          <button class="tab-btn" data-tab="timestamps">Timestamps</button>
+          <button class="tab-btn" data-tab="custom">Custom Levels</button>
+          <button class="tab-btn" data-tab="filter">Filtering</button>
+          <button class="tab-btn" data-tab="cjs">CommonJS</button>
+        </div>
+
+        <!-- Quick Start -->
+        <div class="code-panel active" id="tab-quick">
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-lang">typescript</span>
+              <button class="code-copy-btn" data-code="quick">&#128203; Copy</button>
+            </div>
+            <div class="code-content"><pre><span class="c-keyword">import</span> <span class="c-bracket">{</span> createLogger <span class="c-bracket">}</span> <span class="c-keyword">from</span> <span class="c-string">'logpaint'</span>;
+
+<span class="c-keyword">const</span> log = <span class="c-func">createLogger</span>();
+
+log.<span class="c-method">debug</span>(<span class="c-string">'Request payload: { id: 42 }'</span>);
+log.<span class="c-method">info</span>(<span class="c-string">'Server started on port 3000'</span>);
+log.<span class="c-method">success</span>(<span class="c-string">'Database connected'</span>);
+log.<span class="c-method">warn</span>(<span class="c-string">'Deprecated API endpoint used'</span>);
+log.<span class="c-method">error</span>(<span class="c-string">'Failed to read config file'</span>);</pre></div>
+          </div>
+        </div>
+
+        <!-- Timestamps -->
+        <div class="code-panel" id="tab-timestamps">
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-lang">typescript</span>
+              <button class="code-copy-btn" data-code="timestamps">&#128203; Copy</button>
+            </div>
+            <div class="code-content"><pre><span class="c-keyword">import</span> <span class="c-bracket">{</span> createLogger <span class="c-bracket">}</span> <span class="c-keyword">from</span> <span class="c-string">'logpaint'</span>;
+
+<span class="c-keyword">const</span> log = <span class="c-func">createLogger</span>(<span class="c-bracket">{</span> <span class="c-prop">timestamp</span>: <span class="c-keyword">true</span> <span class="c-bracket">}</span>);
+
+log.<span class="c-method">info</span>(<span class="c-string">'Request received'</span>);
+log.<span class="c-method">success</span>(<span class="c-string">'Response sent in 42ms'</span>);
+log.<span class="c-method">error</span>(<span class="c-string">'Connection timeout'</span>);
+
+<span class="c-comment">// Output:</span>
+<span class="c-comment">// 2026-02-22 10:30:45 [INFO] Request received</span>
+<span class="c-comment">// 2026-02-22 10:30:45 [SUCCESS] Response sent in 42ms</span>
+<span class="c-comment">// 2026-02-22 10:30:45 [ERROR] Connection timeout</span></pre></div>
+          </div>
+        </div>
+
+        <!-- Custom Levels -->
+        <div class="code-panel" id="tab-custom">
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-lang">typescript</span>
+              <button class="code-copy-btn" data-code="custom">&#128203; Copy</button>
+            </div>
+            <div class="code-content"><pre><span class="c-keyword">import</span> <span class="c-bracket">{</span> createLogger <span class="c-bracket">}</span> <span class="c-keyword">from</span> <span class="c-string">'logpaint'</span>;
+
+<span class="c-keyword">const</span> log = <span class="c-func">createLogger</span>(<span class="c-bracket">{</span>
+  <span class="c-prop">timestamp</span>: <span class="c-keyword">true</span>,
+  <span class="c-prop">levels</span>: <span class="c-bracket">{</span>
+    <span class="c-prop">http</span>: <span class="c-bracket">{</span> <span class="c-prop">color</span>: <span class="c-string">'brightBlue'</span> <span class="c-bracket">}</span>,
+    <span class="c-prop">db</span>:   <span class="c-bracket">{</span> <span class="c-prop">color</span>: <span class="c-string">'brightMagenta'</span>, <span class="c-prop">prefix</span>: <span class="c-string">'DATABASE'</span> <span class="c-bracket">}</span>,
+  <span class="c-bracket">}</span>,
+<span class="c-bracket">}</span>);
+
+log.<span class="c-method">http</span>(<span class="c-string">'GET /api/users 200 OK'</span>);
+log.<span class="c-method">db</span>(<span class="c-string">'Query executed in 12ms'</span>);
+log.<span class="c-method">info</span>(<span class="c-string">'Default levels still work'</span>);</pre></div>
+          </div>
+        </div>
+
+        <!-- Filtering -->
+        <div class="code-panel" id="tab-filter">
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-lang">typescript</span>
+              <button class="code-copy-btn" data-code="filter">&#128203; Copy</button>
+            </div>
+            <div class="code-content"><pre><span class="c-keyword">import</span> <span class="c-bracket">{</span> createLogger <span class="c-bracket">}</span> <span class="c-keyword">from</span> <span class="c-string">'logpaint'</span>;
+
+<span class="c-keyword">const</span> log = <span class="c-func">createLogger</span>(<span class="c-bracket">{</span> <span class="c-prop">minLevel</span>: <span class="c-string">'warn'</span> <span class="c-bracket">}</span>);
+
+log.<span class="c-method">debug</span>(<span class="c-string">'Hidden'</span>);    <span class="c-comment">// suppressed (priority 0)</span>
+log.<span class="c-method">info</span>(<span class="c-string">'Hidden'</span>);     <span class="c-comment">// suppressed (priority 1)</span>
+log.<span class="c-method">warn</span>(<span class="c-string">'Visible'</span>);    <span class="c-comment">// shown (priority 2)</span>
+log.<span class="c-method">error</span>(<span class="c-string">'Visible'</span>);   <span class="c-comment">// shown (priority 3)</span>
+
+<span class="c-comment">// Switch at runtime — no restart needed</span>
+log.<span class="c-method">setLevel</span>(<span class="c-string">'debug'</span>);
+log.<span class="c-method">debug</span>(<span class="c-string">'Now visible!'</span>);</pre></div>
+          </div>
+        </div>
+
+        <!-- CommonJS -->
+        <div class="code-panel" id="tab-cjs">
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-lang">javascript</span>
+              <button class="code-copy-btn" data-code="cjs">&#128203; Copy</button>
+            </div>
+            <div class="code-content"><pre><span class="c-keyword">const</span> <span class="c-bracket">{</span> createLogger <span class="c-bracket">}</span> = <span class="c-func">require</span>(<span class="c-string">'logpaint'</span>);
+
+<span class="c-keyword">const</span> log = <span class="c-func">createLogger</span>(<span class="c-bracket">{</span> <span class="c-prop">timestamp</span>: <span class="c-keyword">true</span> <span class="c-bracket">}</span>);
+
+log.<span class="c-method">info</span>(<span class="c-string">'Works with require() too'</span>);
+log.<span class="c-method">success</span>(<span class="c-string">'CJS + ESM — your choice'</span>);</pre></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── API Reference ──────────────────────────────────────── -->
+  <section class="section" id="api">
+    <div class="reveal">
+      <div class="section-label">API Reference</div>
+      <h2 class="section-title">createLogger(config?)</h2>
+      <p class="section-desc">Returns a logger with methods for every level — built-in and custom.</p>
+    </div>
+
+    <div class="reveal reveal-delay-1">
+      <h3 class="api-subtitle">Config Options</h3>
+      <div class="api-table-wrapper">
+        <table class="api-table">
+          <thead><tr><th>Option</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>timestamp</code></td><td>boolean</td><td><code>false</code></td><td>Prepend timestamp to each log</td></tr>
+            <tr><td><code>minLevel</code></td><td>string</td><td>—</td><td>Minimum priority level to display</td></tr>
+            <tr><td><code>levels</code></td><td>Record</td><td>—</td><td>Custom levels to add</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="reveal reveal-delay-2">
+      <h3 class="api-subtitle">Built-in Levels</h3>
+      <div class="api-table-wrapper">
+        <table class="api-table">
+          <thead><tr><th>Level</th><th>Color</th><th>Priority</th></tr></thead>
+          <tbody>
+            <tr><td><code>debug</code></td><td><span style="color:var(--magenta)">magenta</span></td><td>0</td></tr>
+            <tr><td><code>info</code></td><td><span style="color:var(--cyan)">cyan</span></td><td>1</td></tr>
+            <tr><td><code>success</code></td><td><span style="color:var(--green)">green</span></td><td>1</td></tr>
+            <tr><td><code>warn</code></td><td><span style="color:var(--yellow)">yellow</span></td><td>2</td></tr>
+            <tr><td><code>error</code></td><td><span style="color:var(--red)">red</span></td><td>3</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="reveal reveal-delay-3">
+      <h3 class="api-subtitle">Logger Methods</h3>
+      <div class="api-table-wrapper">
+        <table class="api-table">
+          <thead><tr><th>Method</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>log.debug(...args)</code></td><td>Log at debug level (priority 0)</td></tr>
+            <tr><td><code>log.info(...args)</code></td><td>Log at info level (priority 1)</td></tr>
+            <tr><td><code>log.success(...args)</code></td><td>Log at success level (priority 1)</td></tr>
+            <tr><td><code>log.warn(...args)</code></td><td>Log at warn level (priority 2)</td></tr>
+            <tr><td><code>log.error(...args)</code></td><td>Log at error level (priority 3)</td></tr>
+            <tr><td><code>log.setLevel(level)</code></td><td>Change minimum level at runtime</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Footer ─────────────────────────────────────────────── -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-links">
+        <a href="https://github.com/LittleBoy9/logpaint" target="_blank">GitHub</a>
+        <a href="https://www.npmjs.com/package/logpaint" target="_blank">npm</a>
+      </div>
+      <p class="footer-copy">MIT &copy; <a href="https://github.com/LittleBoy9" target="_blank">Sounak Das</a></p>
+    </div>
+  </footer>
+
+  <script>
+    // ─── Raw code for copy ──────────────────────────────────────
+    const CODE = {
+      quick: `import { createLogger } from 'logpaint';
+
+const log = createLogger();
+
+log.debug('Request payload: { id: 42 }');
+log.info('Server started on port 3000');
+log.success('Database connected');
+log.warn('Deprecated API endpoint used');
+log.error('Failed to read config file');`,
+
+      timestamps: `import { createLogger } from 'logpaint';
+
+const log = createLogger({ timestamp: true });
+
+log.info('Request received');
+log.success('Response sent in 42ms');
+log.error('Connection timeout');`,
+
+      custom: `import { createLogger } from 'logpaint';
+
+const log = createLogger({
+  timestamp: true,
+  levels: {
+    http: { color: 'brightBlue' },
+    db:   { color: 'brightMagenta', prefix: 'DATABASE' },
+  },
+});
+
+log.http('GET /api/users 200 OK');
+log.db('Query executed in 12ms');
+log.info('Default levels still work');`,
+
+      filter: `import { createLogger } from 'logpaint';
+
+const log = createLogger({ minLevel: 'warn' });
+
+log.debug('Hidden');    // suppressed (priority 0)
+log.info('Hidden');     // suppressed (priority 1)
+log.warn('Visible');    // shown (priority 2)
+log.error('Visible');   // shown (priority 3)
+
+// Switch at runtime — no restart needed
+log.setLevel('debug');
+log.debug('Now visible!');`,
+
+      cjs: `const { createLogger } = require('logpaint');
+
+const log = createLogger({ timestamp: true });
+
+log.info('Works with require() too');
+log.success('CJS + ESM — your choice');`
+    };
+
+    // ─── Theme Toggle ───────────────────────────────────────────
+    const html = document.documentElement;
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+
+    function setTheme(theme) {
+      html.setAttribute('data-theme', theme);
+      themeIcon.textContent = theme === 'dark' ? '\u263E' : '\u2600';
+      localStorage.setItem('logpaint-theme', theme);
+    }
+
+    themeToggle.addEventListener('click', () => {
+      const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      setTheme(next);
+    });
+
+    const saved = localStorage.getItem('logpaint-theme');
+    if (saved) setTheme(saved);
+
+    // ─── Mobile Nav ─────────────────────────────────────────────
+    const hamburger = document.getElementById('hamburger');
+    const navLinks = document.getElementById('navLinks');
+    hamburger.addEventListener('click', () => navLinks.classList.toggle('open'));
+    navLinks.querySelectorAll('a').forEach(a =>
+      a.addEventListener('click', () => navLinks.classList.remove('open'))
+    );
+
+    // ─── Install Copy ───────────────────────────────────────────
+    const installBox = document.getElementById('installBox');
+    const copyIcon = document.getElementById('copyIcon');
+
+    installBox.addEventListener('click', () => {
+      navigator.clipboard.writeText('npm i logpaint').then(() => {
+        installBox.classList.add('copied');
+        copyIcon.textContent = '\u2713';
+        spawnConfetti(installBox);
+        setTimeout(() => {
+          installBox.classList.remove('copied');
+          copyIcon.textContent = '\uD83D\uDCCB';
+        }, 1800);
+      });
+    });
+
+    function spawnConfetti(target) {
+      const rect = target.getBoundingClientRect();
+      const container = document.createElement('div');
+      container.className = 'confetti-container';
+      container.style.left = (rect.left + rect.width / 2) + 'px';
+      container.style.top = (rect.top + rect.height / 2) + 'px';
+      document.body.appendChild(container);
+
+      const colors = ['#d160e0', '#56d8e0', '#4ade80', '#facc15', '#f87171', '#60a5fa'];
+      for (let i = 0; i < 20; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'confetti';
+        const angle = (Math.PI * 2 * i) / 20;
+        const dist = 40 + Math.random() * 50;
+        dot.style.setProperty('--x', Math.cos(angle) * dist + 'px');
+        dot.style.setProperty('--y', Math.sin(angle) * dist + 'px');
+        dot.style.background = colors[i % colors.length];
+        dot.style.animationDuration = (0.5 + Math.random() * 0.4) + 's';
+        container.appendChild(dot);
+      }
+      setTimeout(() => container.remove(), 1200);
+    }
+
+    // ─── Code Tabs ──────────────────────────────────────────────
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.code-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+      });
+    });
+
+    // ─── Code Copy Buttons ──────────────────────────────────────
+    document.querySelectorAll('.code-copy-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.code;
+        navigator.clipboard.writeText(CODE[key]).then(() => {
+          btn.classList.add('copied');
+          btn.innerHTML = '\u2713 Copied!';
+          setTimeout(() => {
+            btn.classList.remove('copied');
+            btn.innerHTML = '\uD83D\uDCCB Copy';
+          }, 1800);
+        });
+      });
+    });
+
+    // ─── Scroll Reveal ──────────────────────────────────────────
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // ─── Terminal Typewriter ────────────────────────────────────
+    const terminalBody = document.getElementById('terminalBody');
+    const cursor = document.getElementById('terminalCursor');
+
+    const TERM_LINES = [
+      { parts: [
+        { text: '2026-02-22 10:30:45', cls: 't-dim' },
+        { text: ' ' },
+        { text: '[SUCCESS]', cls: 't-green' },
+        { text: ' Server running on http://localhost:3000' }
+      ]},
+      { parts: [
+        { text: '2026-02-22 10:30:45', cls: 't-dim' },
+        { text: ' ' },
+        { text: '[INFO]', cls: 't-cyan' },
+        { text: ' Available routes:' }
+      ]},
+      { parts: [
+        { text: '2026-02-22 10:30:45', cls: 't-dim' },
+        { text: ' ' },
+        { text: '[INFO]', cls: 't-cyan' },
+        { text: '   GET  /' }
+      ]},
+      { parts: [
+        { text: '2026-02-22 10:30:45', cls: 't-dim' },
+        { text: ' ' },
+        { text: '[INFO]', cls: 't-cyan' },
+        { text: '   GET  /users' }
+      ]},
+      { parts: [
+        { text: '2026-02-22 10:30:45', cls: 't-dim' },
+        { text: ' ' },
+        { text: '[INFO]', cls: 't-cyan' },
+        { text: '   POST /users' }
+      ]},
+      { parts: [
+        { text: '2026-02-22 10:30:46', cls: 't-dim' },
+        { text: ' ' },
+        { text: '[HTTP]', cls: 't-blue' },
+        { text: ' GET /api/users 200 — 12ms' }
+      ]},
+      { parts: [
+        { text: '2026-02-22 10:30:46', cls: 't-dim' },
+        { text: ' ' },
+        { text: '[DATABASE]', cls: 't-purple' },
+        { text: ' Query executed in 3ms' }
+      ]},
+      { parts: [
+        { text: '2026-02-22 10:30:46', cls: 't-dim' },
+        { text: ' ' },
+        { text: '[SUCCESS]', cls: 't-green' },
+        { text: ' Fetched 42 users' }
+      ]},
+      { parts: [
+        { text: '2026-02-22 10:30:47', cls: 't-dim' },
+        { text: ' ' },
+        { text: '[DEBUG]', cls: 't-magenta' },
+        { text: ' Cache miss for key "users:list"' }
+      ]},
+      { parts: [
+        { text: '2026-02-22 10:30:48', cls: 't-dim' },
+        { text: ' ' },
+        { text: '[WARN]', cls: 't-yellow' },
+        { text: ' Deprecated endpoint /v1/users called' }
+      ]},
+      { parts: [
+        { text: '2026-02-22 10:30:49', cls: 't-dim' },
+        { text: ' ' },
+        { text: '[ERROR]', cls: 't-red' },
+        { text: ' Connection to Redis timed out' }
+      ]},
+      { parts: [
+        { text: '' },
+        { text: '> log.setLevel("error")', cls: 't-muted' }
+      ]},
+      { parts: [
+        { text: '2026-02-22 10:30:50', cls: 't-dim' },
+        { text: ' ' },
+        { text: '[INFO]', cls: 't-cyan' },
+        { text: ' This message is hidden', cls: 't-muted', strike: true }
+      ]},
+      { parts: [
+        { text: '2026-02-22 10:30:50', cls: 't-dim' },
+        { text: ' ' },
+        { text: '[ERROR]', cls: 't-red' },
+        { text: ' Only errors are visible now' }
+      ]},
+    ];
+
+    let lineIdx = 0;
+    let partIdx = 0;
+    let charIdx = 0;
+    let currentLineEl = null;
+    let typing = false;
+
+    function resetTerminal() {
+      while (terminalBody.firstChild && terminalBody.firstChild !== cursor) {
+        terminalBody.removeChild(terminalBody.firstChild);
+      }
+      lineIdx = 0;
+      partIdx = 0;
+      charIdx = 0;
+      currentLineEl = null;
+    }
+
+    function typeNext() {
+      if (lineIdx >= TERM_LINES.length) {
+        setTimeout(() => { resetTerminal(); typeNext(); }, 3000);
+        return;
+      }
+
+      const line = TERM_LINES[lineIdx];
+      if (!currentLineEl) {
+        currentLineEl = document.createElement('div');
+        currentLineEl.className = 'terminal-line';
+        terminalBody.insertBefore(currentLineEl, cursor);
+      }
+
+      const part = line.parts[partIdx];
+      if (!part) {
+        lineIdx++;
+        partIdx = 0;
+        charIdx = 0;
+        currentLineEl = null;
+        setTimeout(typeNext, 100);
+        return;
+      }
+
+      if (charIdx < part.text.length) {
+        // Find or create span for this part
+        let spanId = 'tp-' + lineIdx + '-' + partIdx;
+        let span = document.getElementById(spanId);
+        if (!span) {
+          span = document.createElement('span');
+          span.id = spanId;
+          if (part.cls) span.className = part.cls;
+          if (part.strike) span.style.textDecoration = 'line-through';
+          currentLineEl.appendChild(span);
+        }
+        span.textContent += part.text[charIdx];
+        charIdx++;
+
+        // Speed: timestamps fast, text normal
+        const delay = part.cls === 't-dim' ? 8 : part.cls === 't-muted' && part.text.startsWith('>') ? 25 : 18;
+        setTimeout(typeNext, delay);
+      } else {
+        partIdx++;
+        charIdx = 0;
+        typeNext();
+      }
+    }
+
+    // Start typing when terminal is visible
+    const termObserver = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && !typing) {
+        typing = true;
+        setTimeout(typeNext, 600);
+      }
+    }, { threshold: 0.3 });
+    termObserver.observe(terminalBody);
+  </script>
+</body>
+</html>
