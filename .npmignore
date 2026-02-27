@@ -3,3 +3,5 @@ test.mjs
 tsconfig.json
 *.log
 .qodo
+examples
+index.html
