@@ -165,12 +165,37 @@
     }
     .theme-toggle:hover { background: var(--tab-active-bg); transform: rotate(20deg); }
 
-    .github-link {
+    .github-link, .npm-link {
       display: flex; align-items: center; gap: 6px; font-size: 0.88rem;
       color: var(--text-muted); transition: color 0.3s;
     }
-    .github-link:hover { color: var(--text); }
-    .github-link svg { width: 20px; height: 20px; fill: currentColor; }
+    .github-link:hover, .npm-link:hover { color: var(--text); }
+    .github-link svg, .npm-link svg { width: 20px; height: 20px; fill: currentColor; }
+
+    .hero-cta {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      justify-content: center; margin-top: 20px;
+      animation: fadeInUp 0.8s ease 0.4s both; position: relative; z-index: 1;
+    }
+    .btn-outline {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 11px 22px; border-radius: 12px; font-size: 0.88rem; font-weight: 600;
+      border: 1px solid var(--card-border); background: var(--card-bg);
+      color: var(--text-muted); cursor: pointer; transition: all 0.3s;
+      backdrop-filter: blur(10px); text-decoration: none;
+    }
+    .btn-outline:hover {
+      border-color: var(--card-hover-border); color: var(--text);
+      transform: translateY(-2px); box-shadow: 0 6px 20px var(--shadow-color);
+    }
+    .btn-outline svg { width: 18px; height: 18px; fill: currentColor; }
+
+    .examples-github-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 0.88rem; font-weight: 500; color: var(--text-muted);
+      transition: color 0.3s;
+    }
+    .examples-github-link:hover { color: var(--cyan); }
 
     .hamburger {
       display: none; background: none; border: none; cursor: pointer;
@@ -461,6 +486,49 @@
     .c-bracket { color: #888; }
     .c-method { color: var(--purple); }
 
+    /* ─── Comparison Table ─────────────────────────────────────── */
+    .compare-section { background: var(--bg-secondary); transition: background 0.5s ease; }
+    .compare-section .section { padding-top: 100px; padding-bottom: 100px; }
+
+    .compare-table-wrapper {
+      overflow-x: auto; border-radius: 14px;
+      border: 1px solid var(--table-border);
+    }
+    .compare-table {
+      width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width: 560px;
+    }
+    .compare-table th {
+      padding: 14px 20px; font-weight: 700; font-size: 0.82rem;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      border-bottom: 1px solid var(--table-border);
+      background: var(--table-row); text-align: center;
+    }
+    .compare-table th:first-child { text-align: left; }
+    .compare-table th.col-logpaint {
+      color: var(--cyan);
+      background: rgba(86,216,224,0.07);
+      border-left: 2px solid var(--cyan);
+      border-right: 2px solid var(--cyan);
+    }
+    .compare-table td {
+      padding: 13px 20px; border-bottom: 1px solid var(--table-border);
+      text-align: center; color: var(--text-muted);
+    }
+    .compare-table td:first-child { text-align: left; color: var(--text); font-weight: 500; }
+    .compare-table tr:last-child td { border-bottom: none; }
+    .compare-table tr:nth-child(even) td { background: var(--table-row); }
+    .compare-table td.col-logpaint {
+      background: rgba(86,216,224,0.05);
+      border-left: 2px solid rgba(86,216,224,0.2);
+      border-right: 2px solid rgba(86,216,224,0.2);
+      font-weight: 600;
+    }
+    .compare-table tr:last-child td.col-logpaint {
+      border-bottom: 2px solid var(--cyan);
+    }
+    .check { color: var(--green); font-size: 1.1rem; }
+    .cross { color: var(--text-muted); font-size: 1.1rem; opacity: 0.4; }
+
     /* ─── API Reference ────────────────────────────────────────── */
     .api-table-wrapper {
       overflow-x: auto; border-radius: 14px;
@@ -576,6 +644,10 @@
           <svg viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
           GitHub
         </a>
+        <a href="https://www.npmjs.com/package/logpaint" target="_blank" class="npm-link">
+          <svg viewBox="0 0 24 24"><path d="M0 0v24h24V0H0zm6.672 19.992H1.992V4.008h4.68v11.988h2.34V4.008h4.68v15.984H6.672zm11.676 0h-4.68v-3.996h-2.34V4.008h7.02v15.984z"/></svg>
+          npm
+        </a>
       </div>
       <button class="hamburger" id="hamburger" aria-label="Menu">
         <span></span><span></span><span></span>
@@ -607,6 +679,17 @@
       <span><span class="cmd">npm i</span> <span class="pkg">logpaint</span></span>
       <span class="copy-icon" id="copyIcon">&#128203;</span>
     </div>
+
+    <div class="hero-cta">
+      <a href="https://www.npmjs.com/package/logpaint" target="_blank" class="btn-outline">
+        <svg viewBox="0 0 24 24"><path d="M0 0v24h24V0H0zm6.672 19.992H1.992V4.008h4.68v11.988h2.34V4.008h4.68v15.984H6.672zm11.676 0h-4.68v-3.996h-2.34V4.008h7.02v15.984z"/></svg>
+        View on npm
+      </a>
+      <a href="https://github.com/LittleBoy9/logpaint" target="_blank" class="btn-outline">
+        <svg viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        GitHub
+      </a>
+    </div>
   </section>
 
   <!-- ─── Terminal Demo ──────────────────────────────────────── -->
@@ -623,6 +706,83 @@
       </div>
     </div>
   </section>
+
+  <!-- ─── Comparison ─────────────────────────────────────────── -->
+  <div class="compare-section">
+    <div class="section">
+      <div class="reveal">
+        <div class="section-label">Why logpaint?</div>
+        <h2 class="section-title">Built for developers, not infrastructure.</h2>
+        <p class="section-desc">Most logging libraries are heavy, complex, and need config files just to get colored output. logpaint does it in one line.</p>
+      </div>
+      <div class="reveal reveal-delay-1">
+        <div class="compare-table-wrapper">
+          <table class="compare-table">
+            <thead>
+              <tr>
+                <th>Feature</th>
+                <th class="col-logpaint">logpaint</th>
+                <th>chalk</th>
+                <th>winston</th>
+                <th>pino</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Zero dependencies</td>
+                <td class="col-logpaint"><span class="check">✓</span></td>
+                <td><span class="check">✓</span></td>
+                <td><span class="cross">✕</span></td>
+                <td><span class="cross">✕</span></td>
+              </tr>
+              <tr>
+                <td>Built-in log levels</td>
+                <td class="col-logpaint"><span class="check">✓</span></td>
+                <td><span class="cross">✕</span></td>
+                <td><span class="check">✓</span></td>
+                <td><span class="check">✓</span></td>
+              </tr>
+              <tr>
+                <td>Custom levels (typed)</td>
+                <td class="col-logpaint"><span class="check">✓</span></td>
+                <td><span class="cross">✕</span></td>
+                <td><span class="check">✓</span></td>
+                <td><span class="cross">✕</span></td>
+              </tr>
+              <tr>
+                <td>Level filtering</td>
+                <td class="col-logpaint"><span class="check">✓</span></td>
+                <td><span class="cross">✕</span></td>
+                <td><span class="check">✓</span></td>
+                <td><span class="check">✓</span></td>
+              </tr>
+              <tr>
+                <td>Runtime level switching</td>
+                <td class="col-logpaint"><span class="check">✓</span></td>
+                <td><span class="cross">✕</span></td>
+                <td><span class="check">✓</span></td>
+                <td><span class="cross">✕</span></td>
+              </tr>
+              <tr>
+                <td>TypeScript generics</td>
+                <td class="col-logpaint"><span class="check">✓</span></td>
+                <td><span class="check">✓</span></td>
+                <td><span class="cross">✕</span></td>
+                <td><span class="check">✓</span></td>
+              </tr>
+              <tr>
+                <td>ESM + CJS</td>
+                <td class="col-logpaint"><span class="check">✓</span></td>
+                <td><span class="check">✓</span></td>
+                <td><span class="check">✓</span></td>
+                <td><span class="check">✓</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- ─── Features ───────────────────────────────────────────── -->
   <section class="section" id="features">
@@ -784,6 +944,12 @@ log.<span class="c-method">info</span>(<span class="c-string">'Works with requir
 log.<span class="c-method">success</span>(<span class="c-string">'CJS + ESM — your choice'</span>);</pre></div>
           </div>
         </div>
+      </div>
+
+      <div class="reveal reveal-delay-2" style="text-align:center; margin-top: 24px;">
+        <a href="https://github.com/LittleBoy9/logpaint/tree/main/examples" target="_blank" class="examples-github-link">
+          See full working examples on GitHub →
+        </a>
       </div>
     </div>
   </div>

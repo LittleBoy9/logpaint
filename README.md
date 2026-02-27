@@ -232,6 +232,8 @@ log.info('Works with require() too');
 log.success('CJS + ESM — your choice');
 ```
 
+Full working examples: [Node.js](examples/logpaint-in-nodejs) · [NestJS](examples/logpaint-in-nestjs)
+
 ---
 
 ## Available Colors
